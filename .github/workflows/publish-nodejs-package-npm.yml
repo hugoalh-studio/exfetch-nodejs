@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: "Publish NodeJS Package - NPM"
+on:
+  release:
+    types:
+      - "published"
+defaults:
+  run:
+    shell: "pwsh"
+permissions:
+  actions: "write"
+  checks: "write"
+  contents: "write"
+  deployments: "write"
+  discussions: "write"
+  id-token: "write"
+  issues: "write"
+  packages: "write"
+  pages: "write"
+  pull-requests: "write"
+  repository-projects: "write"
+  security-events: "write"
+  statuses: "write"
+jobs:
+  main:
+    name: "Main"
+    uses: "hugoalh/hugoalh/.github/workflows/reusable-publish-nodejs-package-npm.yml@main"
+    secrets:
+      NPM_TOKEN: "${{secrets.NPM_TOKEN}}"

@@ -1,0 +1,45 @@
+{
+	"name": "@hugoalh/exfetch",
+	"version": "0.1.0",
+	"description": "A module to extend `fetch`.",
+	"keywords": [
+		"exfetch",
+		"fetch"
+	],
+	"homepage": "https://github.com/hugoalh-studio/exfetch-nodejs#readme",
+	"bugs": {
+		"url": "https://github.com/hugoalh-studio/exfetch-nodejs/issues"
+	},
+	"license": "MIT",
+	"author": "hugoalh",
+	"type": "module",
+	"main": "./dist/main.js",
+	"exports": {
+		".": {
+			"import": "./dist/main.js"
+		}
+	},
+	"types": "./dist/main.d.ts",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/hugoalh-studio/exfetch-nodejs.git"
+	},
+	"dependencies": {
+		"@hugoalh/advanced-determine": "^13.0.0-beta.2"
+	},
+	"devDependencies": {
+		"@types/node": "^20.8.9",
+		"@typescript-eslint/eslint-plugin": "^6.9.0",
+		"@typescript-eslint/parser": "^6.9.0",
+		"eslint": "^8.52.0",
+		"eslint-plugin-only-warn": "^1.1.0",
+		"typescript": "^5.2.2"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	}
+}
