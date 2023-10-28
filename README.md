@@ -95,7 +95,7 @@ This project is inspired from:
   //=> false (`false` when no broken page, otherwise `true`)
 
   const result = [];
-  for (const response in responses) {
+  for (const response of responses) {
     result.push(...(await response.json()));
   }
   result;
