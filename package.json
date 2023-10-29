@@ -25,7 +25,7 @@
 		"url": "git+https://github.com/hugoalh-studio/exfetch-nodejs.git"
 	},
 	"dependencies": {
-		"@hugoalh/advanced-determine": "^13.0.0-beta.2"
+		"@hugoalh/advanced-determine": "^13.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "^20.8.9",
