@@ -1,6 +1,6 @@
 import { randomInt } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { HTTPHeaderLink } from "./header/link.js";
+import { HTTPHeaderLink, type HTTPHeaderLinkEntry } from "./header/link.js";
 import { HTTPHeaderRetryAfter } from "./header/retry-after.js";
 import { delay } from "./vendor/delay.js";
 /**
@@ -447,7 +447,10 @@ export class ExFetch {
 					if (typeof options.linkUpNextPage === "function") {
 						uri = options.linkUpNextPage(uriLookUp, responseHeaderLink);
 					} else {
-						uri = new URL(responseHeaderLink.getByRel("next")[0][0], uriLookUp);
+						const responseHeaderLinkNextPage: HTTPHeaderLinkEntry[] = responseHeaderLink.getByRel("next");
+						if (responseHeaderLinkNextPage.length > 0) {
+							uri = new URL(responseHeaderLinkNextPage[0][0], uriLookUp);
+						}
 					}
 				} catch (error) {
 					if (options.throwOnInvalidHeaderLink) {
