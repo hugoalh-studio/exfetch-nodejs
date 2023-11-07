@@ -205,51 +205,51 @@ export declare class ExFetch {
     deleteHTTPStatusCodesRetryable(...values: number[]): this;
     /**
      * Fetch a resource from the network with extend features.
-     * @param {URL} input URL of the resource.
+     * @param {string | URL} input URL of the resource.
      * @param {Parameters<typeof fetch>[1]} [init] Custom setting that apply to the request.
      * @returns {Promise<Response>} Response.
      */
-    fetch(input: URL, init?: Parameters<typeof fetch>[1]): Promise<Response>;
+    fetch(input: string | URL, init?: Parameters<typeof fetch>[1]): Promise<Response>;
     /**
      * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
-     * @param {URL} input URL of the first page of the resources.
+     * @param {string | URL} input URL of the first page of the resources.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
      * @param {ExFetchPaginateOptions} [optionsOverride={}] Options.
      * @returns {Promise<Response[]>} Responses.
      */
-    fetchPaginate(input: URL, init?: Parameters<typeof fetch>[1], optionsOverride?: ExFetchPaginateOptions): Promise<Response[]>;
+    fetchPaginate(input: string | URL, init?: Parameters<typeof fetch>[1], optionsOverride?: ExFetchPaginateOptions): Promise<Response[]>;
     /**
      * Fetch a resource from the network with retry attempts.
-     * @param {URL} input URL of the resource.
+     * @param {string | URL} input URL of the resource.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to the request.
      * @param {ExFetchOptions} [options={}] Options.
      * @returns {Promise<Response>} Response.
      */
-    static fetch(input: URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response>;
+    static fetch(input: string | URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response>;
     /**
      * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
-     * @param {URL} input URL of the first page of the resources.
+     * @param {string | URL} input URL of the first page of the resources.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
      * @param {ExFetchOptions} [options={}] Options.
      * @returns {Promise<Response[]>} Responses.
      */
-    static fetchPaginate(input: URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response[]>;
+    static fetchPaginate(input: string | URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response[]>;
 }
 export default ExFetch;
 /**
  * Fetch a resource from the network with retry attempts.
- * @param {URL} input URL of the resource.
+ * @param {string | URL} input URL of the resource.
  * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to the request.
  * @param {ExFetchOptions} [options={}] Options.
  * @returns {Promise<Response>} Response.
  */
-export declare function exFetch(input: URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response>;
+export declare function exFetch(input: string | URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response>;
 /**
  * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
- * @param {URL} input URL of the first page of the resources.
+ * @param {string | URL} input URL of the first page of the resources.
  * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
  * @param {ExFetchOptions} [options={}] Options.
  * @returns {Promise<Response[]>} Responses.
  */
-export declare function exFetchPaginate(input: URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response[]>;
+export declare function exFetchPaginate(input: string | URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response[]>;
 //# sourceMappingURL=exfetch.d.ts.map

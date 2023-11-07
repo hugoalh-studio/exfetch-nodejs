@@ -20,7 +20,7 @@ export const httpStatusCodesRetryable = Object.freeze([
 /**
  * exFetch default user agent.
  */
-export const userAgentDefault = `NodeJS/${process.versions.node}-${process.platform}-${process.arch} exFetch/0.1.0`;
+export const userAgentDefault = `NodeJS/${process.versions.node}-${process.platform}-${process.arch} exFetch/0.1.1`;
 /**
  * @access private
  * @param {ExFetchIntervalOptions} input
@@ -186,7 +186,7 @@ export class ExFetch {
     }
     /**
      * Fetch a resource from the network with extend features.
-     * @param {URL} input URL of the resource.
+     * @param {string | URL} input URL of the resource.
      * @param {Parameters<typeof fetch>[1]} [init] Custom setting that apply to the request.
      * @returns {Promise<Response>} Response.
      */
@@ -240,7 +240,7 @@ export class ExFetch {
     }
     /**
      * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
-     * @param {URL} input URL of the first page of the resources.
+     * @param {string | URL} input URL of the first page of the resources.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
      * @param {ExFetchPaginateOptions} [optionsOverride={}] Options.
      * @returns {Promise<Response[]>} Responses.
@@ -287,7 +287,7 @@ export class ExFetch {
     }
     /**
      * Fetch a resource from the network with retry attempts.
-     * @param {URL} input URL of the resource.
+     * @param {string | URL} input URL of the resource.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to the request.
      * @param {ExFetchOptions} [options={}] Options.
      * @returns {Promise<Response>} Response.
@@ -297,7 +297,7 @@ export class ExFetch {
     }
     /**
      * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
-     * @param {URL} input URL of the first page of the resources.
+     * @param {string | URL} input URL of the first page of the resources.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
      * @param {ExFetchOptions} [options={}] Options.
      * @returns {Promise<Response[]>} Responses.
@@ -309,7 +309,7 @@ export class ExFetch {
 export default ExFetch;
 /**
  * Fetch a resource from the network with retry attempts.
- * @param {URL} input URL of the resource.
+ * @param {string | URL} input URL of the resource.
  * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to the request.
  * @param {ExFetchOptions} [options={}] Options.
  * @returns {Promise<Response>} Response.
@@ -319,7 +319,7 @@ export function exFetch(input, init, options = {}) {
 }
 /**
  * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
- * @param {URL} input URL of the first page of the resources.
+ * @param {string | URL} input URL of the first page of the resources.
  * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
  * @param {ExFetchOptions} [options={}] Options.
  * @returns {Promise<Response[]>} Responses.
