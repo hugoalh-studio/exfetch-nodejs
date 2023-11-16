@@ -13,16 +13,21 @@ A NodeJS module to extend `fetch`.
 This project is inspired from:
 
 - [Deno - Standard Library - Async](https://deno.land/std/async)
-- [jhermsmeier/node-http-link-header](https://github.com/jhermsmeier/node-http-link-header)
-- [node-fetch/node-fetch](https://github.com/node-fetch/node-fetch)
-- [octokit/plugin-paginate-rest.js](https://github.com/octokit/plugin-paginate-rest.js)
-- [octokit/plugin-retry.js](https://github.com/octokit/plugin-retry.js)
-- [thlorenz/parse-link-header](https://github.com/thlorenz/parse-link-header)
+- axios ([GitHub](https://github.com/axios/axios))([NPM](https://www.npmjs.com/package/axios))
+- jhermsmeier/node-http-link-header ([GitHub](https://github.com/jhermsmeier/node-http-link-header))([NPM](https://www.npmjs.com/package/http-link-header))
+- node-fetch ([GitHub](https://github.com/node-fetch/node-fetch))([NPM](https://www.npmjs.com/package/node-fetch))
+- octokit/plugin-paginate-rest.js ([GitHub](https://github.com/octokit/plugin-paginate-rest.js))([NPM](https://www.npmjs.com/package/@octokit/plugin-paginate-rest))
+- octokit/plugin-retry.js ([GitHub](https://github.com/octokit/plugin-retry.js))([NPM](https://www.npmjs.com/package/@octokit/plugin-retry))
+- sindresorhus/got ([GitHub](https://github.com/sindresorhus/got))([NPM](https://www.npmjs.com/package/got))
+- sindresorhus/ky ([GitHub](https://github.com/sindresorhus/ky))([NPM](https://www.npmjs.com/package/ky))
+- superagent ([GitHub](https://github.com/ladjs/superagent))([NPM](https://www.npmjs.com/package/superagent))
+- thlorenz/parse-link-header ([GitHub](https://github.com/thlorenz/parse-link-header))([NPM](https://www.npmjs.com/package/parse-link-header))
 
 ## 🌟 Feature
 
-- Retry on failure requests, obey the response header `Retry-After` or a fallback random-able interval.
-- Simplify paginate requests.
+- Automatically retry on failure requests, preferentially obey the response header `Retry-After`.
+- Redirect fine control.
+- Simplify URL paginate requests.
 
 ## 🔰 Begin
 
@@ -67,26 +72,18 @@ This project is inspired from:
 ### Class
 
 - `ExFetch`
+- `HTTPHeaderLink`
+- `HTTPHeaderRetryAfter`
 
 ### Function
 
 - `exFetch`
 - `exFetchPaginate`
 
-### Interface / Type
-
-- `ExFetchEventName`
-- `ExFetchEventOnRetryParameters`
-- `ExFetchEventOptions`
-- `ExFetchIntervalOptions`
-- `ExFetchOptions`
-- `ExFetchPaginateOptions`
-- `ExFetchRetryOptions`
-
 ## ✍️ Example
 
 - ```ts
-  import { exFetchPaginate } from "@hugoalh/exfetch";
+  import { exFetchPaginate } from "@hugoalh/exfetch/exfetch";
   const responses: Response[] = await exFetchPaginate("https://api.github.com/repos/microsoft/vscode/labels?per_page=100");
 
   responses.map((response: Response) => {
