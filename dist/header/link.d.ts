@@ -3,10 +3,12 @@
  */
 export type HTTPHeaderLinkEntry = [
     uri: string,
-    parameters: Record<string, string>
+    parameters: {
+        [key: string]: string;
+    }
 ];
 /**
- * Parse and stringify as HTTP header `Link` according to RFC 8288 standard.
+ * Handle HTTP header `Link` according to RFC 8288 standard.
  */
 export declare class HTTPHeaderLink {
     #private;
@@ -27,11 +29,11 @@ export declare class HTTPHeaderLink {
     entries(): HTTPHeaderLinkEntry[];
     /**
      * Get entries by parameter.
-     * @param {string} name Name of the parameter.
+     * @param {string} key Key of the parameter.
      * @param {string} value Value of the parameter.
      * @returns {HTTPHeaderLinkEntry[]} Entries.
      */
-    getByParameter(name: string, value: string): HTTPHeaderLinkEntry[];
+    getByParameter(key: string, value: string): HTTPHeaderLinkEntry[];
     /**
      * Get entries by parameter `rel`.
      * @param {string} value Value of the parameter `rel`.
@@ -40,11 +42,11 @@ export declare class HTTPHeaderLink {
     getByRel(value: string): HTTPHeaderLinkEntry[];
     /**
      * Whether have entries that match parameter.
-     * @param {string} name Name of the parameter.
+     * @param {string} key Key of the parameter.
      * @param {string} value Value of the parameter.
      * @returns {boolean} Result.
      */
-    hasParameter(name: string, value: string): boolean;
+    hasParameter(key: string, value: string): boolean;
     /**
      * Stringify entries.
      * @returns {string} Stringified entries.

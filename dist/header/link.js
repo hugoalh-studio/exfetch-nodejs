@@ -1,4 +1,5 @@
 import { isStringCaseLower } from "@hugoalh/advanced-determine/string/is-case-lower";
+import { isStringSingleLine } from "@hugoalh/advanced-determine/string/is-singleline";
 const httpHeaderLinkParametersNeedLowerCase = new Set([
     "rel",
     "type"
@@ -10,8 +11,9 @@ const httpHeaderLinkParametersNeedLowerCase = new Set([
  * @returns {void}
  */
 function checkURI(uri) {
-    if (/\r?\n|\s|\t/u.test(uri)) {
-        throw new SyntaxError(`Whitespace characters are not allow in URI!`);
+    if (!isStringSingleLine(uri) ||
+        /[\s\t]/u.test(uri)) {
+        throw new SyntaxError(`${uri} is not a valid URI!`);
     }
 }
 /**
@@ -26,7 +28,7 @@ function cursorWhitespaceSkipper(value, cursor) {
     return (valueAfterCursor.length - valueAfterCursor.trimStart().length);
 }
 /**
- * Parse and stringify as HTTP header `Link` according to RFC 8288 standard.
+ * Handle HTTP header `Link` according to RFC 8288 standard.
  */
 export class HTTPHeaderLink {
     #entries = [];
@@ -48,7 +50,7 @@ export class HTTPHeaderLink {
         if (value.length === 0) {
             return;
         }
-        const valueResolve = value.replace(/[\uFEFF\u00A0]/gu, ""); // Remove unicode characters of BOM (Byte Order Mark) and no-break space.
+        const valueResolve = value.replace(/[\uFEFF\u00A0]/gu, ""); // Remove Unicode characters of BOM (Byte Order Mark) and no-break space.
         for (let cursor = 0; cursor < valueResolve.length; cursor += 1) {
             cursor += cursorWhitespaceSkipper(valueResolve, cursor);
             if (valueResolve.charAt(cursor) !== "<") {
@@ -79,19 +81,19 @@ export class HTTPHeaderLink {
             cursor += 1;
             while (cursor < valueResolve.length) {
                 cursor += cursorWhitespaceSkipper(valueResolve, cursor);
-                const parameterName = valueResolve.slice(cursor).match(/^[\w-]+\*?/u)?.[0].toLowerCase();
-                if (typeof parameterName === "undefined") {
-                    throw new SyntaxError(`Unexpected character "${valueResolve.charAt(cursor)}" at position ${cursor}; Expect a valid parameter name!`);
+                const parameterKey = valueResolve.slice(cursor).match(/^[\w-]+\*?/u)?.[0].toLowerCase();
+                if (typeof parameterKey === "undefined") {
+                    throw new SyntaxError(`Unexpected character "${valueResolve.charAt(cursor)}" at position ${cursor}; Expect a valid parameter key!`);
                 }
-                cursor += parameterName.length;
+                cursor += parameterKey.length;
                 cursor += cursorWhitespaceSkipper(valueResolve, cursor);
                 if (cursor === valueResolve.length ||
                     valueResolve.charAt(cursor) === ",") {
-                    parameters[parameterName] = "";
+                    parameters[parameterKey] = "";
                     break;
                 }
                 if (valueResolve.charAt(cursor) === ";") {
-                    parameters[parameterName] = "";
+                    parameters[parameterKey] = "";
                     cursor += 1;
                     continue;
                 }
@@ -126,7 +128,7 @@ export class HTTPHeaderLink {
                         cursor += cursorDiffParameterValue;
                     }
                 }
-                parameters[parameterName] = httpHeaderLinkParametersNeedLowerCase.has(parameterName) ? parameterValue.toLowerCase() : parameterValue;
+                parameters[parameterKey] = httpHeaderLinkParametersNeedLowerCase.has(parameterKey) ? parameterValue.toLowerCase() : parameterValue;
                 cursor += cursorWhitespaceSkipper(valueResolve, cursor);
                 if (cursor === valueResolve.length ||
                     valueResolve.charAt(cursor) === ",") {
@@ -157,13 +159,13 @@ export class HTTPHeaderLink {
             for (const entry of value) {
                 const [uri, parameters] = entry;
                 checkURI(uri);
-                Object.entries(parameters).forEach(([parameterName, parameterValue]) => {
-                    if (!isStringCaseLower(parameterName) ||
-                        !(/^[\w-]+\*?$/u.test(parameterName))) {
-                        throw new SyntaxError(`\`${parameterName}\` is not a valid parameter name!`);
+                Object.entries(parameters).forEach(([parameterKey, parameterValue]) => {
+                    if (!isStringCaseLower(parameterKey) ||
+                        !(/^[\w-]+\*?$/u.test(parameterKey))) {
+                        throw new SyntaxError(`\`${parameterKey}\` is not a valid parameter key!`);
                     }
-                    if (httpHeaderLinkParametersNeedLowerCase.has(parameterName) && !isStringCaseLower(parameterValue)) {
-                        throw new SyntaxError(`\`${parameterValue}\` is not a valid parameter name!`);
+                    if (httpHeaderLinkParametersNeedLowerCase.has(parameterKey) && !isStringCaseLower(parameterValue)) {
+                        throw new SyntaxError(`\`${parameterValue}\` is not a valid parameter value!`);
                     }
                 });
                 this.#entries.push([uri, { ...parameters }]);
@@ -186,19 +188,19 @@ export class HTTPHeaderLink {
     }
     /**
      * Get entries by parameter.
-     * @param {string} name Name of the parameter.
+     * @param {string} key Key of the parameter.
      * @param {string} value Value of the parameter.
      * @returns {HTTPHeaderLinkEntry[]} Entries.
      */
-    getByParameter(name, value) {
-        if (!isStringCaseLower(name)) {
-            throw new SyntaxError(`\`${name}\` is not a valid parameter name!`);
+    getByParameter(key, value) {
+        if (!isStringCaseLower(key)) {
+            throw new SyntaxError(`\`${key}\` is not a valid parameter key!`);
         }
-        if (name === "rel") {
+        if (key === "rel") {
             return this.getByRel(value);
         }
         return this.#entries.filter((entry) => {
-            return (entry[1][name] === value);
+            return (entry[1][key] === value);
         });
     }
     /**
@@ -216,12 +218,12 @@ export class HTTPHeaderLink {
     }
     /**
      * Whether have entries that match parameter.
-     * @param {string} name Name of the parameter.
+     * @param {string} key Key of the parameter.
      * @param {string} value Value of the parameter.
      * @returns {boolean} Result.
      */
-    hasParameter(name, value) {
-        return (this.getByParameter(name, value).length > 0);
+    hasParameter(key, value) {
+        return (this.getByParameter(key, value).length > 0);
     }
     /**
      * Stringify entries.
@@ -231,8 +233,8 @@ export class HTTPHeaderLink {
         return this.#entries.map((entry) => {
             const [uri, parameters] = entry;
             let result = `<${encodeURI(uri)}>`;
-            for (const [name, value] of Object.entries(parameters)) {
-                result += (value.length > 0) ? `; ${name}="${value.replace(/"/g, "\\\"")}"` : `; ${name}`;
+            for (const [key, value] of Object.entries(parameters)) {
+                result += (value.length > 0) ? `; ${key}="${value.replace(/"/g, "\\\"")}"` : `; ${key}`;
             }
             return result;
         }).join(", ");

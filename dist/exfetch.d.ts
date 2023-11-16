@@ -1,5 +1,3 @@
-/// <reference types="node" resolution-mode="require"/>
-import { EventEmitter } from "node:events";
 import { HTTPHeaderLink } from "./header/link.js";
 /**
  * exFetch HTTP status codes that retryable.
@@ -10,88 +8,140 @@ export declare const httpStatusCodesRetryable: readonly number[];
  */
 export declare const userAgentDefault: string;
 /**
- * exFetch event name.
- */
-export type ExFetchEventName = "retry";
-/**
- * exFetch event "Retry" parameters.
- */
-export interface ExFetchEventOnRetryParameters {
-    /**
-     * Current attempt, begin from `1`.
-     */
-    attemptCurrent: number;
-    /**
-     * Maximum amount of attempts.
-     */
-    attempts: number;
-    /**
-     * Will retry again after this amount of time, by milliseconds.
-     */
-    retryAfter: number;
-    /**
-     * Current response status code.
-     */
-    statusCode: Response["status"];
-    /**
-     * Current response status text.
-     */
-    statusText: Response["statusText"];
-}
-/**
- * exFetch event options.
- */
-export interface ExFetchEventOptions {
-    retry?: (param: ExFetchEventOnRetryParameters) => void;
-}
-/**
  * @access private
  */
-interface ExFetchIntervalStatus {
+interface ExFetchDelayOptionsInternal {
     /**
-     * Whether to increment minimum interval time per attempt/retry interval (always disable for other types of interval).
-     * @default true
-     */
-    increment: boolean;
-    /**
-     * Maximum time per interval, by milliseconds.
-     * @default 60000 // 60 seconds / 1 minute
+     * Maximum time per delay, by milliseconds.
      */
     maximum: number;
     /**
-     * Minimum time per interval, by milliseconds.
-     * @default 1000 // 1 second
+     * Minimum time per delay, by milliseconds.
      */
     minimum: number;
 }
 /**
- * exFetch interval options.
+ * exFetch delay options.
  */
-export interface ExFetchIntervalOptions extends Partial<ExFetchIntervalStatus> {
+export interface ExFetchDelayOptions extends Partial<ExFetchDelayOptionsInternal> {
     /** @alias maximum */ max?: this["maximum"];
     /** @alias minimum */ min?: this["minimum"];
 }
 /**
+ * exFetch event common payload.
  * @access private
  */
-interface ExFetchPaginateStatus {
+interface ExFetchEventCommonPayload {
     /**
-     * Maximum amount of pages to fetch.
-     * @default Infinity // Unlimited
+     * Status code of the current response.
      */
-    amount: number;
+    statusCode: Response["status"];
+    /**
+     * Status text of the current response.
+     */
+    statusText: Response["statusText"];
+}
+/**
+ * exFetch paginate event payload.
+ */
+export interface ExFetchEventPaginatePayload {
+    /**
+     * Current count of the paginates, begin from `1`.
+     */
+    countCurrent: number;
+    /**
+     * Maximum number of the paginates allowed.
+     */
+    countMaximum: number;
+    /**
+     * Will paginate to the next page after this amount of time, by milliseconds.
+     */
+    paginateAfter: number;
+    /**
+     * Will paginate to this URL.
+     */
+    paginateURL: URL;
+}
+/**
+ * exFetch redirect event payload.
+ */
+export interface ExFetchEventRedirectPayload extends ExFetchEventCommonPayload {
+    /**
+     * Current count of the redirects, begin from `1`.
+     */
+    countCurrent: number;
+    /**
+     * Maximum number of the redirects allowed.
+     */
+    countMaximum: number;
+    /**
+     * Will redirect after this amount of time, by milliseconds.
+     */
+    redirectAfter: number;
+    /**
+     * Will redirect to this URL.
+     */
+    redirectURL: URL;
+}
+/**
+ * exFetch retry event payload.
+ */
+export interface ExFetchEventRetryPayload extends ExFetchEventCommonPayload {
+    /**
+     * Current count of the retries, begin from `1`.
+     */
+    countCurrent: number;
+    /**
+     * Maximum number of the retries allowed.
+     */
+    countMaximum: number;
+    /**
+     * Will retry after this amount of time, by milliseconds.
+     */
+    retryAfter: number;
+    /**
+     * Will retry this URL.
+     */
+    retryURL: URL;
+}
+/**
+ * exFetch paginate link up payload.
+ */
+export interface ExFetchPaginateLinkUpPayload {
+    /**
+     * Header link of the current page.
+     */
+    currentHeaderLink: HTTPHeaderLink;
+    /**
+     * URL of the current page.
+     */
+    currentURL: URL;
+}
+/**
+ * @access private
+ */
+interface ExFetchPaginateOptionsInternal {
+    /**
+     * Amount of time to delay between the paginates, by milliseconds.
+     */
+    delay: ExFetchDelayOptionsInternal;
     /**
      * Custom function for correctly link up to the next page, useful for the endpoints which not correctly return an absolute or relative URL.
-     * @param {URL} currentURL URL of the current page.
-     * @param {HTTPHeaderLink} currentHeaderLink Header link of the current page.
-     * @returns {URL} URL of the next page.
+     * @param {ExFetchPaginateLinkUpPayload} param Link up payload of the paginate.
+     * @returns {URL | null | undefined} URL of the next page.
      */
-    linkUpNextPage?: (currentURL: URL, currentHeaderLink: HTTPHeaderLink) => URL;
+    linkUpNextPage: (param: ExFetchPaginateLinkUpPayload) => URL | null | undefined;
     /**
-     * Amount of time to interval/pause between pages resource request, by milliseconds.
-     * @default {}
+     * Maximum amount of paginates to allow.
+     * @default Infinity // Unlimited
      */
-    interval: ExFetchIntervalStatus;
+    maximum: number;
+    /**
+     * Event listener for the paginates.
+     * @param {ExFetchEventPaginatePayload} param Event payload of the paginate.
+     * @returns {void}
+     */
+    onEvent?: (param: ExFetchEventPaginatePayload) => void;
     /**
      * Whether to throw an error when the latest page response provide an invalid HTTP header `Link`.
      * @default true
@@ -101,83 +151,108 @@ interface ExFetchPaginateStatus {
 /**
  * exFetch paginate options.
  */
-export interface ExFetchPaginateOptions extends Partial<Omit<ExFetchPaginateStatus, "interval">> {
+export interface ExFetchPaginateOptions extends Partial<Omit<ExFetchPaginateOptionsInternal, "delay">> {
     /**
-     * Amount of time to interval/pause between pages resource request, by milliseconds.
+     * Amount of time to delay between the paginates, by milliseconds.
      * @default 0
      */
-    interval?: number | Omit<ExFetchIntervalOptions, "increment">;
-    /** @alias amount */ count?: this["amount"];
-    /** @alias amount */ limit?: this["amount"];
-    /** @alias interval */ pause?: this["interval"];
+    delay?: number | ExFetchDelayOptions;
 }
 /**
  * @access private
  */
-interface ExFetchRetryStatus {
+interface ExFetchRedirectOptionsInternal {
     /**
-     * Maximum amount of attempts until failure.
+     * Amount of time to delay between the redirects, by milliseconds.
+     */
+    delay: ExFetchDelayOptionsInternal;
+    /**
+     * Maximum amount of redirects to allow.
+     * @default Infinity
+     */
+    maximum: number;
+    /**
+     * Event listener for the redirects.
+     * @param {ExFetchEventRedirectPayload} param Event payload of the redirect.
+     * @returns {void}
+     */
+    onEvent?: (param: ExFetchEventRedirectPayload) => void;
+}
+/**
+ * exFetch redirect options.
+ */
+export interface ExFetchRedirectOptions extends Partial<Omit<ExFetchRedirectOptionsInternal, "delay">> {
+    /**
+     * Amount of time to delay between the redirects, by milliseconds.
+     * @default 0
+     */
+    delay?: number | ExFetchDelayOptions;
+}
+/**
+ * @access private
+ */
+interface ExFetchRetryOptionsInternal {
+    /**
+     * Amount of time to delay between the attempts, by milliseconds. This only apply when the endpoint have not provide any retry information in the response.
+     */
+    delay: ExFetchDelayOptionsInternal;
+    /**
+     * Maximum amount of attempts to allow.
      * @default 4
      */
-    attempts: number;
+    maximum: number;
     /**
-     * Amount of time to delay/interval/pause between attempts, by milliseconds. This only apply when the endpoint have not provide any retry information in the response.
-     * @default {}
+     * Event listener for the retries.
+     * @param {ExFetchEventRetryPayload} param Event payload of the retry.
+     * @returns {void}
      */
-    interval: ExFetchIntervalStatus;
+    onEvent?: (param: ExFetchEventRetryPayload) => void;
 }
 /**
  * exFetch retry options.
  */
-export interface ExFetchRetryOptions extends Partial<Omit<ExFetchRetryStatus, "interval">> {
+export interface ExFetchRetryOptions extends Partial<Omit<ExFetchRetryOptionsInternal, "delay">> {
     /**
-     * Amount of time to delay/interval/pause between attempts, by milliseconds. This only apply when the endpoint have not provide any retry information in the response.
-     * @default {}
+     * Amount of time to delay between the attempts, by milliseconds. This only apply when the endpoint have not provide any retry information in the response.
+     * @default
+     * {
+     *   maximum: 60000,
+     *   minimum: 1000
+     * }
      */
-    interval?: number | ExFetchIntervalOptions;
-    /** @alias attempts */ attemptsMax?: this["attempts"];
-    /** @alias attempts */ attemptsMaximum?: this["attempts"];
-    /** @alias attempts */ maxAttempts?: this["attempts"];
-    /** @alias attempts */ maximumAttempts?: this["attempts"];
-    /** @alias interval */ delay?: this["interval"];
-    /** @alias interval */ pause?: this["interval"];
+    delay?: number | ExFetchDelayOptions;
 }
 /**
  * exFetch options.
  */
 export interface ExFetchOptions {
     /**
-     * Catch up events:
-     *
-     * - `"retry"`
-     * @default undefined
-     */
-    event?: EventEmitter | ExFetchEventOptions;
-    /**
      * Custom HTTP status codes that retryable.
      *
-     * WARNING: This will override the default when defined; To add and/or delete some of the HTTP status codes, use methods `addHTTPStatusCodesRetryable` and/or `deleteHTTPStatusCodesRetryable` instead.
+     * WARNING: This will override the default when defined; To add and/or delete some of the HTTP status codes, use methods `addHTTPStatusCodeRetryable` and/or `deleteHTTPStatusCodeRetryable` instead.
      * @default undefined
      */
     httpStatusCodesRetryable?: number[] | Set<number>;
     /**
      * Paginate options.
-     * @default {}
      */
     paginate?: ExFetchPaginateOptions;
     /**
+     * Redirect options. This only apply when define property `redirect` as `"follow"` in the request, and define property `maximum` in this option.
+     */
+    redirect?: ExFetchRedirectOptions;
+    /**
      * Retry options.
-     * @default {}
      */
     retry?: ExFetchRetryOptions;
     /**
-     * Timeout of the request (include retries), by milliseconds. This only apply when have not provide `AbortSignal` in the request.
-     * @default Infinity // (Disable)
+     * Timeout of the request (include the redirects and the retries), by milliseconds. This only apply when have not define property `signal` in the request.
+     * @default Infinity // Disable
      */
     timeout?: number;
     /**
-     * Custom HTTP header `User-Agent`.
-     * @default `NodeJS/${process.versions.node}-${process.platform}-${process.arch} exFetch/${ExFetch.version}`.
+     * Custom user agent. This only apply when have not define HTTP header `User-Agent` in the request.
+     * @default `Deno/${Deno.version.deno}-${Deno.build.target} exFetch/${ExFetch.version}`.
      */
     userAgent?: string;
 }
@@ -192,17 +267,41 @@ export declare class ExFetch {
      */
     constructor(options?: ExFetchOptions);
     /**
-     * Add HTTP status codes that retryable.
-     * @param {...number} values Values.
+     * Add HTTP status code that retryable.
+     * @param {number} value Value.
      * @returns {this}
      */
-    addHTTPStatusCodesRetryable(...values: number[]): this;
+    addHTTPStatusCodeRetryable(value: number): this;
     /**
-     * Delete HTTP status codes that not retryable.
+     * Add HTTP status code that retryable.
+     * @param {number[]} values Values.
+     * @returns {this}
+     */
+    addHTTPStatusCodeRetryable(values: number[]): this;
+    /**
+     * Add HTTP status code that retryable.
      * @param {...number} values Values.
      * @returns {this}
      */
-    deleteHTTPStatusCodesRetryable(...values: number[]): this;
+    addHTTPStatusCodeRetryable(...values: number[]): this;
+    /**
+     * Delete HTTP status code that not retryable.
+     * @param {number} value Value.
+     * @returns {this}
+     */
+    deleteHTTPStatusCodeRetryable(value: number): this;
+    /**
+     * Delete HTTP status code that not retryable.
+     * @param {number[]} values Values.
+     * @returns {this}
+     */
+    deleteHTTPStatusCodeRetryable(values: number[]): this;
+    /**
+     * Delete HTTP status code that not retryable.
+     * @param {...number} values Values.
+     * @returns {this}
+     */
+    deleteHTTPStatusCodeRetryable(...values: number[]): this;
     /**
      * Fetch a resource from the network with extend features.
      * @param {string | URL} input URL of the resource.
@@ -211,7 +310,9 @@ export declare class ExFetch {
      */
     fetch(input: string | URL, init?: Parameters<typeof fetch>[1]): Promise<Response>;
     /**
-     * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
+     * Fetch paginate resources from the network.
+     *
+     * IMPORTANT: Only support URL paginate.
      * @param {string | URL} input URL of the first page of the resources.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
      * @param {ExFetchPaginateOptions} [optionsOverride={}] Options.
@@ -219,7 +320,7 @@ export declare class ExFetch {
      */
     fetchPaginate(input: string | URL, init?: Parameters<typeof fetch>[1], optionsOverride?: ExFetchPaginateOptions): Promise<Response[]>;
     /**
-     * Fetch a resource from the network with retry attempts.
+     * Fetch a resource from the network.
      * @param {string | URL} input URL of the resource.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to the request.
      * @param {ExFetchOptions} [options={}] Options.
@@ -227,7 +328,9 @@ export declare class ExFetch {
      */
     static fetch(input: string | URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response>;
     /**
-     * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
+     * Fetch paginate resources from the network.
+     *
+     * IMPORTANT: Only support URL paginate.
      * @param {string | URL} input URL of the first page of the resources.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
      * @param {ExFetchOptions} [options={}] Options.
@@ -237,7 +340,7 @@ export declare class ExFetch {
 }
 export default ExFetch;
 /**
- * Fetch a resource from the network with retry attempts.
+ * Fetch a resource from the network.
  * @param {string | URL} input URL of the resource.
  * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to the request.
  * @param {ExFetchOptions} [options={}] Options.
@@ -245,7 +348,9 @@ export default ExFetch;
  */
 export declare function exFetch(input: string | URL, init?: Parameters<typeof fetch>[1], options?: ExFetchOptions): Promise<Response>;
 /**
- * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
+ * Fetch paginate resources from the network.
+ *
+ * IMPORTANT: Only support URL paginate.
  * @param {string | URL} input URL of the first page of the resources.
  * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
  * @param {ExFetchOptions} [options={}] Options.

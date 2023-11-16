@@ -1,6 +1,6 @@
 {
 	"name": "@hugoalh/exfetch",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"description": "A module to extend `fetch`.",
 	"keywords": [
 		"exfetch",
@@ -17,6 +17,15 @@
 	"exports": {
 		".": {
 			"import": "./dist/main.js"
+		},
+		"./exfetch": {
+			"import": "./dist/exfetch.js"
+		},
+		"./header/link": {
+			"import": "./dist/header/link.js"
+		},
+		"./header/retry-after": {
+			"import": "./dist/header/retry-after.js"
 		}
 	},
 	"types": "./dist/main.d.ts",
@@ -25,12 +34,12 @@
 		"url": "git+https://github.com/hugoalh-studio/exfetch-nodejs.git"
 	},
 	"dependencies": {
-		"@hugoalh/advanced-determine": "^13.1.0"
+		"@hugoalh/advanced-determine": "^13.2.0"
 	},
 	"devDependencies": {
-		"@types/node": "^20.8.10",
-		"@typescript-eslint/eslint-plugin": "^6.10.0",
-		"@typescript-eslint/parser": "^6.10.0",
+		"@types/node": "^20.9.0",
+		"@typescript-eslint/eslint-plugin": "^6.11.0",
+		"@typescript-eslint/parser": "^6.11.0",
 		"eslint": "^8.53.0",
 		"eslint-plugin-only-warn": "^1.1.0",
 		"typescript": "^5.2.2"

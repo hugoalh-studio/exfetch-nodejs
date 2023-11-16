@@ -1,8 +1,16 @@
 import { randomInt } from "node:crypto";
-import { EventEmitter } from "node:events";
 import { HTTPHeaderLink } from "./header/link.js";
 import { HTTPHeaderRetryAfter } from "./header/retry-after.js";
-import { delay } from "./vendor/delay.js";
+/**
+ * exFetch HTTP status codes that redirectable.
+ */
+const httpStatusCodesRedirectable = Object.freeze([
+    301,
+    302,
+    303,
+    307,
+    308
+]);
 /**
  * exFetch HTTP status codes that retryable.
  */
@@ -20,108 +28,148 @@ export const httpStatusCodesRetryable = Object.freeze([
 /**
  * exFetch default user agent.
  */
-export const userAgentDefault = `NodeJS/${process.versions.node}-${process.platform}-${process.arch} exFetch/0.1.1`;
+export const userAgentDefault = `NodeJS/${process.versions.node}-${process.platform}-${process.arch} exFetch/0.2.0`;
 /**
+ * Resolve delay options.
  * @access private
- * @param {ExFetchIntervalOptions} input
- * @param {string} inputArgumentPrefix
- * @param {ExFetchIntervalStatus} original
- * @returns {ExFetchIntervalStatus}
+ * @param {string} prefix
+ * @param {number | ExFetchDelayOptions} input
+ * @param {ExFetchDelayOptionsInternal} original
+ * @returns {ExFetchDelayOptionsInternal}
  */
-function resolveIntervalOptions(input, inputArgumentPrefix, original) {
+function resolveDelayOptions(prefix, input, original) {
+    if (typeof input === "number") {
+        if (!(Number.isSafeInteger(input) && input >= 0)) {
+            throw new RangeError(`Argument \`${prefix}\` is not a number which is integer, positive, and safe!`);
+        }
+        return {
+            maximum: input,
+            minimum: input
+        };
+    }
     input.maximum ??= input.max;
     input.minimum ??= input.min;
-    const optionsResolve = {
-        ...original,
-        increment: input.increment ?? original.increment
-    };
+    const optionsResolve = { ...original };
     if (typeof input.maximum !== "undefined") {
         if (!(Number.isSafeInteger(input.maximum) && input.maximum >= 0)) {
-            throw new RangeError(`Argument \`${inputArgumentPrefix}.maximum\` is not a number which is integer, positive, and safe!`);
+            throw new RangeError(`Argument \`${prefix}.maximum\` is not a number which is integer, positive, and safe!`);
         }
         optionsResolve.maximum = input.maximum;
     }
     if (typeof input.minimum !== "undefined") {
         if (!(Number.isSafeInteger(input.minimum) && input.minimum >= 0)) {
-            throw new RangeError(`Argument \`${inputArgumentPrefix}.minimum\` is not a number which is integer, positive, and safe!`);
+            throw new RangeError(`Argument \`${prefix}.minimum\` is not a number which is integer, positive, and safe!`);
         }
         optionsResolve.minimum = input.minimum;
     }
-    if (optionsResolve.maximum < optionsResolve.minimum) {
-        throw new RangeError(`Argument \`${inputArgumentPrefix}.minimum\` is large than argument \`${inputArgumentPrefix}.maximum\`!`);
+    if (optionsResolve.minimum > optionsResolve.maximum) {
+        throw new RangeError(`Argument \`${prefix}.minimum\` is large than argument \`${prefix}.maximum\`!`);
     }
     return optionsResolve;
 }
 /**
+ * Resolve delay time.
  * @access private
- * @param {ExFetchPaginateOptions} input
- * @param {string} inputArgumentPrefix
- * @param {ExFetchPaginateStatus} original
- * @returns {ExFetchPaginateStatus}
+ * @param {ExFetchDelayOptionsInternal} param
+ * @returns {number} Delay time.
  */
-function resolvePaginateOptions(input, inputArgumentPrefix, original) {
-    input.amount ??= input.count ?? input.limit;
-    input.interval ??= input.pause;
-    const optionsResolve = {
-        ...original,
-        linkUpNextPage: input.linkUpNextPage ?? original.linkUpNextPage,
-        throwOnInvalidHeaderLink: input.throwOnInvalidHeaderLink ?? original.throwOnInvalidHeaderLink
-    };
-    if (typeof input.amount !== "undefined") {
-        if (input.amount !== Infinity && !(Number.isSafeInteger(input.amount) && input.amount > 0)) {
-            throw new RangeError(`Argument \`${inputArgumentPrefix}.amount\` is not \`Infinity\`, or a number which is integer, safe, and > 0!`);
-        }
-        optionsResolve.amount = input.amount;
-    }
-    if (typeof input.interval === "number") {
-        optionsResolve.interval = resolveIntervalOptions({
-            maximum: input.interval,
-            minimum: input.interval
-        }, `${inputArgumentPrefix}.interval`, optionsResolve.interval);
-    }
-    else if (typeof input.interval !== "undefined") {
-        optionsResolve.interval = resolveIntervalOptions({ ...input.interval, increment: false }, `${inputArgumentPrefix}.interval`, optionsResolve.interval);
-    }
-    return optionsResolve;
-}
-/**
- * Resolve interval time.
- * @access private
- * @param {ExFetchIntervalResolveTimeParameters} param
- * @returns {number} Interval time.
- */
-function resolveIntervalTime({ attemptCurrent, attempts, increment, maximum, minimum }) {
+function resolveDelayTime({ maximum, minimum }) {
     if (maximum === minimum) {
         return maximum;
     }
-    if (increment) {
-        const incrementMinimum = minimum + ((maximum - minimum) * attemptCurrent / attempts);
-        return randomInt(incrementMinimum, maximum);
-    }
     return randomInt(minimum, maximum);
+}
+/**
+ * @access private
+ * @param {string} prefix
+ * @param {ExFetchPaginateOptions} input
+ * @param {ExFetchPaginateOptionsInternal} original
+ * @returns {ExFetchPaginateOptionsInternal}
+ */
+function resolvePaginateOptions(prefix, input, original) {
+    const optionsResolve = { ...original };
+    if (typeof input.delay !== "undefined") {
+        optionsResolve.delay = resolveDelayOptions(`${prefix}.delay`, input.delay, original.delay);
+    }
+    if (typeof input.linkUpNextPage !== "undefined") {
+        optionsResolve.linkUpNextPage = input.linkUpNextPage;
+    }
+    if (typeof input.maximum !== "undefined") {
+        if (input.maximum !== Infinity && !(Number.isSafeInteger(input.maximum) && input.maximum > 0)) {
+            throw new RangeError(`Argument \`${prefix}.maximum\` is not \`Infinity\`, or a number which is integer, safe, and > 0!`);
+        }
+        optionsResolve.maximum = input.maximum;
+    }
+    if (typeof input.onEvent !== "undefined") {
+        optionsResolve.onEvent = input.onEvent;
+    }
+    if (typeof input.throwOnInvalidHeaderLink !== "undefined") {
+        optionsResolve.throwOnInvalidHeaderLink = input.throwOnInvalidHeaderLink;
+    }
+    return optionsResolve;
+}
+/**
+ * Start a `Promise` based delay with `AbortSignal`.
+ * @param {number} value Time of the delay, by milliseconds. `0` means execute "immediately", or more accurately, the next event cycle.
+ * @param {AbortSignal | undefined} [signal] A signal object that allow to communicate with a DOM request and abort it if required via an `AbortController` object.
+ * @returns {Promise<void>}
+ */
+function setDelay(value, signal) {
+    if (value <= 0) {
+        return Promise.resolve();
+    }
+    if (signal?.aborted) {
+        return Promise.reject(signal.reason);
+    }
+    return new Promise((resolve, reject) => {
+        function abort() {
+            clearTimeout(id);
+            reject(signal?.reason);
+        }
+        function done() {
+            signal?.removeEventListener("abort", abort);
+            resolve();
+        }
+        const id = setTimeout(done, value);
+        signal?.addEventListener("abort", abort, { once: true });
+    });
 }
 /**
  * Extend `fetch`.
  */
 export class ExFetch {
-    #event;
     #httpStatusCodesRetryable;
     #paginate = {
-        amount: Infinity,
-        interval: {
-            increment: false,
+        delay: {
             maximum: 0,
             minimum: 0
         },
+        linkUpNextPage: ({ currentHeaderLink, currentURL }) => {
+            const currentHeaderLinkEntryNextPage = currentHeaderLink.getByRel("next");
+            if (currentHeaderLinkEntryNextPage.length > 0) {
+                return new URL(currentHeaderLinkEntryNextPage[0][0], currentURL);
+            }
+            return;
+        },
+        maximum: Infinity,
+        onEvent: undefined,
         throwOnInvalidHeaderLink: true
     };
+    #redirect = {
+        delay: {
+            maximum: 0,
+            minimum: 0
+        },
+        maximum: Infinity,
+        onEvent: undefined
+    };
     #retry = {
-        attempts: 4,
-        interval: {
-            increment: true,
+        delay: {
             maximum: 60000,
             minimum: 1000
-        }
+        },
+        maximum: 4,
+        onEvent: undefined
     };
     #timeout = Infinity;
     #userAgent = userAgentDefault;
@@ -130,31 +178,31 @@ export class ExFetch {
      * @param {ExFetchOptions} [options={}] Options.
      */
     constructor(options = {}) {
-        options.retry ??= {};
-        options.retry.attempts ??= options.retry.attemptsMaximum ?? options.retry.attemptsMax ?? options.retry.maximumAttempts ?? options.retry.maxAttempts;
-        options.retry.interval ??= options.retry.delay ?? options.retry.pause;
-        if (options.event instanceof EventEmitter) {
-            this.#event = options.event;
-        }
-        else {
-            this.#event = new EventEmitter();
-            if (typeof options.event !== "undefined") {
-                if (typeof options.event.retry !== "undefined") {
-                    this.#event.on("retry", options.event.retry);
-                }
-            }
-        }
         this.#httpStatusCodesRetryable = new Set((typeof options.httpStatusCodesRetryable === "undefined") ? httpStatusCodesRetryable : options.httpStatusCodesRetryable);
-        this.#paginate = resolvePaginateOptions(options.paginate ?? {}, "options.paginate", this.#paginate);
-        if (typeof options.retry.attempts !== "undefined") {
-            if (!(Number.isSafeInteger(options.retry.attempts) && options.retry.attempts >= 0)) {
-                throw new RangeError(`Argument \`options.retry.attempts\` is not a number which is integer, positive, and safe!`);
-            }
-            this.#retry.attempts = options.retry.attempts;
+        this.#paginate = resolvePaginateOptions("options.paginate", options.paginate ?? {}, this.#paginate);
+        if (typeof options.redirect?.delay !== "undefined") {
+            this.#redirect.delay = resolveDelayOptions("options.redirect.delay", options.redirect.delay, this.#redirect.delay);
         }
+        if (typeof options.redirect?.maximum !== "undefined") {
+            if (!(Number.isSafeInteger(options.redirect.maximum) && options.redirect.maximum >= 0)) {
+                throw new RangeError(`Argument \`options.redirect.maximum\` is not a number which is integer, positive, and safe!`);
+            }
+            this.#redirect.maximum = options.redirect.maximum;
+        }
+        this.#redirect.onEvent = options.redirect?.onEvent;
+        if (typeof options.retry?.delay !== "undefined") {
+            this.#retry.delay = resolveDelayOptions("options.retry.delay", options.retry.delay, this.#retry.delay);
+        }
+        if (typeof options.retry?.maximum !== "undefined") {
+            if (!(Number.isSafeInteger(options.retry.maximum) && options.retry.maximum >= 0)) {
+                throw new RangeError(`Argument \`options.retry.maximum\` is not a number which is integer, positive, and safe!`);
+            }
+            this.#retry.maximum = options.retry.maximum;
+        }
+        this.#retry.onEvent = options.retry?.onEvent;
         if (typeof options.timeout !== "undefined") {
             if (options.timeout !== Infinity && !(Number.isSafeInteger(options.timeout) && options.timeout > 0)) {
-                throw new RangeError(`Argument \`options.timeout\` is not a number which is integer, positive, safe, and > 0!`);
+                throw new RangeError(`Argument \`options.timeout\` is not \`Infinity\`, or a number which is integer, positive, safe, and > 0!`);
             }
             this.#timeout = options.timeout;
         }
@@ -162,24 +210,14 @@ export class ExFetch {
             this.#userAgent = options.userAgent;
         }
     }
-    /**
-     * Add HTTP status codes that retryable.
-     * @param {...number} values Values.
-     * @returns {this}
-     */
-    addHTTPStatusCodesRetryable(...values) {
-        for (const value of values) {
+    addHTTPStatusCodeRetryable(...values) {
+        for (const value of values.flat(Infinity)) {
             this.#httpStatusCodesRetryable.add(value);
         }
         return this;
     }
-    /**
-     * Delete HTTP status codes that not retryable.
-     * @param {...number} values Values.
-     * @returns {this}
-     */
-    deleteHTTPStatusCodesRetryable(...values) {
-        for (const value of values) {
+    deleteHTTPStatusCodeRetryable(...values) {
+        for (const value of values.flat(Infinity)) {
             this.#httpStatusCodesRetryable.delete(value);
         }
         return this;
@@ -191,102 +229,140 @@ export class ExFetch {
      * @returns {Promise<Response>} Response.
      */
     async fetch(input, init) {
-        const requestForFetchHeaders = new Headers(init?.headers);
-        if (!requestForFetchHeaders.has("User-Agent") && this.#userAgent.length > 0) {
-            requestForFetchHeaders.set("User-Agent", this.#userAgent);
+        if (new URL(input).protocol === "file:") {
+            return fetch(input, init);
         }
-        let requestForFetchSignal = init?.signal ?? undefined;
-        if (typeof requestForFetchSignal === "undefined" && this.#timeout !== Infinity) {
-            requestForFetchSignal = AbortSignal.timeout(this.#timeout);
+        const requestHeaders = new Headers(init?.headers);
+        if (!requestHeaders.has("User-Agent") && this.#userAgent.length > 0) {
+            requestHeaders.set("User-Agent", this.#userAgent);
         }
-        const requestForFetch = new Request(input, {
+        const requestRedirectControl = init?.redirect === "follow" && this.#redirect.maximum !== Infinity;
+        let requestSignal = init?.signal ?? undefined;
+        if (typeof requestSignal === "undefined" && this.#timeout !== Infinity) {
+            requestSignal = AbortSignal.timeout(this.#timeout);
+        }
+        let requestFetchInput = input;
+        const requestFetchInit = {
             ...init,
-            headers: requestForFetchHeaders,
-            signal: requestForFetchSignal
-        });
-        let attempt = 1;
+            headers: requestHeaders,
+            redirect: requestRedirectControl ? "manual" : init?.redirect,
+            signal: requestSignal
+        };
+        let redirects = 0;
+        let retries = 0;
         let response;
         do {
-            response = await fetch(requestForFetch);
+            response = await fetch(requestFetchInput, requestFetchInit);
+            if (response.status === 304) {
+                break;
+            }
+            if (requestRedirectControl && httpStatusCodesRedirectable.includes(response.status)) {
+                if (redirects >= this.#redirect.maximum) {
+                    break;
+                }
+                const redirectURL = response.headers.get("Location");
+                if (redirectURL === null) {
+                    break;
+                }
+                redirects += 1;
+                try {
+                    requestFetchInput = new URL(redirectURL, input);
+                }
+                catch {
+                    break;
+                }
+                const delayTime = resolveDelayTime(this.#redirect.delay);
+                if (typeof this.#redirect.onEvent !== "undefined") {
+                    void this.#redirect.onEvent({
+                        countCurrent: redirects,
+                        countMaximum: this.#redirect.maximum,
+                        redirectAfter: delayTime,
+                        redirectURL: new URL(requestFetchInput),
+                        statusCode: response.status,
+                        statusText: response.statusText
+                    });
+                }
+                await setDelay(delayTime, requestSignal);
+                continue;
+            }
             if (response.ok ||
-                attempt >= this.#retry.attempts ||
+                retries >= this.#retry.maximum ||
                 !this.#httpStatusCodesRetryable.has(response.status)) {
                 break;
             }
-            let intervalTime = undefined;
+            retries += 1;
+            let delayTime;
             try {
-                intervalTime = new HTTPHeaderRetryAfter(response).getRemainTimeMilliseconds();
+                delayTime = new HTTPHeaderRetryAfter(response).getRemainTimeMilliseconds();
             }
             catch {
-                // Continue on error.
+                delayTime = resolveDelayTime(this.#retry.delay);
             }
-            intervalTime ??= resolveIntervalTime({
-                ...this.#retry.interval,
-                attemptCurrent: attempt,
-                attempts: this.#retry.attempts
-            });
-            const eventRetryPayload = {
-                attemptCurrent: attempt,
-                attempts: this.#retry.attempts,
-                retryAfter: intervalTime,
-                statusCode: response.status,
-                statusText: response.statusText
-            };
-            this.#event.emit("retry", eventRetryPayload);
-            await delay(intervalTime, { signal: requestForFetchSignal });
-            attempt += 1;
-        } while (attempt <= this.#retry.attempts);
+            if (typeof this.#retry.onEvent !== "undefined") {
+                void this.#retry.onEvent({
+                    countCurrent: retries,
+                    countMaximum: this.#retry.maximum,
+                    retryAfter: delayTime,
+                    retryURL: new URL(requestFetchInput),
+                    statusCode: response.status,
+                    statusText: response.statusText
+                });
+            }
+            await setDelay(delayTime, requestSignal);
+        } while (retries <= this.#retry.maximum);
         return response;
     }
     /**
-     * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
+     * Fetch paginate resources from the network.
+     *
+     * IMPORTANT: Only support URL paginate.
      * @param {string | URL} input URL of the first page of the resources.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
      * @param {ExFetchPaginateOptions} [optionsOverride={}] Options.
      * @returns {Promise<Response[]>} Responses.
      */
     async fetchPaginate(input, init, optionsOverride = {}) {
-        const options = resolvePaginateOptions(optionsOverride, "optionsOverride", this.#paginate);
+        const options = resolvePaginateOptions("optionsOverride", optionsOverride, this.#paginate);
         const responses = [];
-        for (let page = 1, uri = new URL(input); page <= options.amount && uri instanceof URL; page += 1) {
+        for (let page = 1, uri = new URL(input); page <= options.maximum && typeof uri !== "undefined" && uri !== null; page += 1) {
             if (page > 1) {
-                const intervalTime = resolveIntervalTime({
-                    ...options.interval,
-                    attemptCurrent: 1,
-                    attempts: Number.MAX_SAFE_INTEGER
-                });
-                if (intervalTime > 0) {
-                    await delay(intervalTime, { signal: init?.signal ?? undefined });
+                const delayTime = resolveDelayTime(options.delay);
+                if (typeof options.onEvent !== "undefined") {
+                    void options.onEvent({
+                        countCurrent: page,
+                        countMaximum: options.maximum,
+                        paginateAfter: delayTime,
+                        paginateURL: new URL(uri)
+                    });
                 }
+                await setDelay(delayTime, init?.signal ?? undefined);
             }
             const uriLookUp = uri;
             uri = undefined;
             const response = await this.fetch(uriLookUp, init);
             responses.push(response);
             if (response.ok) {
+                let responseHeaderLink;
                 try {
-                    const responseHeaderLink = HTTPHeaderLink.parse(response);
-                    if (typeof options.linkUpNextPage === "function") {
-                        uri = options.linkUpNextPage(uriLookUp, responseHeaderLink);
-                    }
-                    else {
-                        const responseHeaderLinkNextPage = responseHeaderLink.getByRel("next");
-                        if (responseHeaderLinkNextPage.length > 0) {
-                            uri = new URL(responseHeaderLinkNextPage[0][0], uriLookUp);
-                        }
-                    }
+                    responseHeaderLink = HTTPHeaderLink.parse(response);
                 }
                 catch (error) {
                     if (options.throwOnInvalidHeaderLink) {
                         throw new SyntaxError(`[${uriLookUp.toString()}] ${error?.message ?? error}`);
                     }
                 }
+                if (typeof responseHeaderLink !== "undefined") {
+                    uri = options.linkUpNextPage({
+                        currentHeaderLink: responseHeaderLink,
+                        currentURL: uriLookUp
+                    });
+                }
             }
         }
         return responses;
     }
     /**
-     * Fetch a resource from the network with retry attempts.
+     * Fetch a resource from the network.
      * @param {string | URL} input URL of the resource.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to the request.
      * @param {ExFetchOptions} [options={}] Options.
@@ -296,7 +372,9 @@ export class ExFetch {
         return new this(options).fetch(input, init);
     }
     /**
-     * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
+     * Fetch paginate resources from the network.
+     *
+     * IMPORTANT: Only support URL paginate.
      * @param {string | URL} input URL of the first page of the resources.
      * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
      * @param {ExFetchOptions} [options={}] Options.
@@ -308,7 +386,7 @@ export class ExFetch {
 }
 export default ExFetch;
 /**
- * Fetch a resource from the network with retry attempts.
+ * Fetch a resource from the network.
  * @param {string | URL} input URL of the resource.
  * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to the request.
  * @param {ExFetchOptions} [options={}] Options.
@@ -318,7 +396,9 @@ export function exFetch(input, init, options = {}) {
     return new ExFetch(options).fetch(input, init);
 }
 /**
- * Fetch paginate resources from the network with retry attempts; Not support GraphQL.
+ * Fetch paginate resources from the network.
+ *
+ * IMPORTANT: Only support URL paginate.
  * @param {string | URL} input URL of the first page of the resources.
  * @param {Parameters<typeof fetch>[1]} init Custom setting that apply to each request.
  * @param {ExFetchOptions} [options={}] Options.
