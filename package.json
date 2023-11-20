@@ -37,10 +37,10 @@
 		"@hugoalh/advanced-determine": "^13.2.0"
 	},
 	"devDependencies": {
-		"@types/node": "^20.9.0",
+		"@types/node": "^20.9.2",
 		"@typescript-eslint/eslint-plugin": "^6.11.0",
 		"@typescript-eslint/parser": "^6.11.0",
-		"eslint": "^8.53.0",
+		"eslint": "^8.54.0",
 		"eslint-plugin-only-warn": "^1.1.0",
 		"typescript": "^5.2.2"
 	},
