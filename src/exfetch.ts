@@ -28,7 +28,7 @@ export const httpStatusCodesRetryable: readonly number[] = Object.freeze([
 /**
  * exFetch default user agent.
  */
-export const userAgentDefault = `NodeJS/${process.versions.node}-${process.platform}-${process.arch} exFetch/0.2.0`;
+export const userAgentDefault = `NodeJS/${process.versions.node}-${process.platform}-${process.arch} exFetch/0.2.1`;
 /**
  * @access private
  */
@@ -521,7 +521,11 @@ export class ExFetch {
 		if (!requestHeaders.has("User-Agent") && this.#userAgent.length > 0) {
 			requestHeaders.set("User-Agent", this.#userAgent);
 		}
-		const requestRedirectControl: boolean = init?.redirect === "follow" && this.#redirect.maximum !== Infinity;
+		const requestRedirectControl: boolean = this.#redirect.maximum !== Infinity && (
+			typeof init === "undefined" ||
+			typeof init.redirect === "undefined" ||
+			init.redirect === "follow"
+		);
 		let requestSignal: AbortSignal | undefined = init?.signal ?? undefined;
 		if (typeof requestSignal === "undefined" && this.#timeout !== Infinity) {
 			requestSignal = AbortSignal.timeout(this.#timeout);
