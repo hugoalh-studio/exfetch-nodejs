@@ -51,7 +51,7 @@ This project is inspired from:
 
 ### NodeJS
 
-- **Target Version:** >= v18.0.0, &:
+- **Target Version:** >= v18.12.0, &:
   - TypeScript >= v5.1.0 *\[Development\]*
 - **Require Permission:** *N/A*
 - **Domain/Registry:**
