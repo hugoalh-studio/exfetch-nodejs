@@ -15,17 +15,21 @@
 	"type": "module",
 	"main": "./dist/main.js",
 	"exports": {
-		".": {
-			"import": "./dist/main.js"
-		},
 		"./exfetch": {
+			"types": "./dist/exfetch.d.ts",
 			"import": "./dist/exfetch.js"
 		},
 		"./header/link": {
+			"types": "./dist/header/link.d.ts",
 			"import": "./dist/header/link.js"
 		},
 		"./header/retry-after": {
+			"types": "./dist/header/retry-after.d.ts",
 			"import": "./dist/header/retry-after.js"
+		},
+		".": {
+			"types": "./dist/main.d.ts",
+			"import": "./dist/main.js"
 		}
 	},
 	"types": "./dist/main.d.ts",
