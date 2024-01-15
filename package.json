@@ -1,6 +1,6 @@
 {
 	"name": "@hugoalh/exfetch",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "A module to extend `fetch`.",
 	"keywords": [
 		"exfetch",
@@ -38,7 +38,7 @@
 		"url": "git+https://github.com/hugoalh-studio/exfetch-nodejs.git"
 	},
 	"dependencies": {
-		"@hugoalh/advanced-determine": "^14.0.0"
+		"@hugoalh/advanced-determine": "^14.0.1"
 	},
 	"devDependencies": {
 		"@stylistic/eslint-plugin": "^1.5.3",
