@@ -1,1 +1,0 @@
-{"version":3,"file":"retry-after.d.ts","sourceRoot":"","sources":["../../src/header/retry-after.ts"],"names":[],"mappings":"AAAA;;GAEG;AACH,qBAAa,oBAAoB;;IAEhC;;OAEG;gBACS,KAAK,EAAE,MAAM,GAAG,MAAM,GAAG,IAAI,GAAG,OAAO,GAAG,oBAAoB,GAAG,QAAQ;IA4BrF;;;OAGG;IACH,OAAO,IAAI,IAAI;IAGf;;;OAGG;IACH,yBAAyB,IAAI,MAAM;IAInC;;;OAGG;IACH,oBAAoB,IAAI,MAAM;CAG9B;AACD,eAAe,oBAAoB,CAAC"}

@@ -37,6 +37,9 @@
 		"type": "git",
 		"url": "git+https://github.com/hugoalh-studio/exfetch-nodejs.git"
 	},
+	"scripts": {
+		"build": "tsc"
+	},
 	"dependencies": {
 		"@hugoalh/advanced-determine": "^14.0.1"
 	},
