@@ -2,19 +2,18 @@
 
 ## Supported Versions
 
-> | **Support** | **Legend** | **Description** |
-> |:-:|:-:|:--|
-> | ✔️ | 🟤 | Pending / Pre Release / Unstable |
-> | ✔️ | 🔵 | Current Release |
-> | ✔️ | 🟢 | Long Term Support |
-> | ✔️ | 🟠 | Maintenance |
-> | ❌ | 🔴 | End of Life |
+> | **Legend** | **Description** |
+> |:-:|:--|
+> | 🟤 | Pending / Pre Release / Unstable |
+> | 🔵 | Current Release |
+> | 🟢 | Long Term Support |
+> | 🟠 | Maintenance |
+> | 🔴 | End Of Life / Not Supported |
 
-| **Versions** | **Status** | **🔵 Date** | **🟢 Date** | **🔴 Date** | **Target - Bun** | **Target - NodeJS** |
-|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| v0.3.X | 🔵 | 2024-01-14 | *N/A* | *Unknown* | ^ v1.0.0 | >= v18.12.0 |
-| v0.2.X | 🟠 | 2023-11-16 | *N/A* | 2024-03-15 | ^ v1.0.0 | >= v18.0.0 |
-| v0.1.X | 🔴 | 2023-11-03 | *N/A* | 2023-12-01 | ^ v1.0.0 | >= v18.0.0 |
+| **Versions** | **Status** | **🔵 Date** | **🟢 Date** | **🔴 Date** | **Target - NodeJS** |
+|:-:|:-:|:-:|:-:|:-:|:-:|
+| v0.3.X | 🔵 | 2024-01-14 | *N/A* | *Unknown* | >= v18.12.0 |
+| v0.2.X | 🟠 | 2023-11-16 | *N/A* | 2024-03-15 | >= v18.0.0 |
 
 > **ℹ️ Notice:**
 >
